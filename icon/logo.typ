@@ -5,7 +5,7 @@
   fill: none,
 )
 
-#let logo-color = rgb(144, 72, 144)
+#let logo-color = rgb(200, 100, 200)
 
 #place(
   dx: 0pt,
@@ -18,8 +18,8 @@
     inset: 0pt,
   )[
     #align(center + horizon)[
-      #text(fill: white, size: 90pt, weight: "bold")[
-        $t c$
+      #text(font: "Impact",style:"italic",fill: white, size: 80pt, weight: 200)[
+        tc
       ]
     ]
   ]

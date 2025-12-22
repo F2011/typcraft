@@ -1,7 +1,7 @@
 .PHONY: build build-wasm build-elm dev clean deploy
 
 # Build everything
-build: build-wasm build-elm
+build: build-wasm build-elm build-favicon
 
 # Build WASM module
 build-wasm:
@@ -10,6 +10,10 @@ build-wasm:
 # Build Elm
 build-elm:
 	elm make src/Main.elm --output=public/elm.js
+
+# Build Favicon
+build-favicon:
+	cd icon && typst compile -f svg logo.typ && convert logo.svg -define icon:auto-resize=16,32,48,64,256 logo.ico && cp logo.ico ../public/favicon.ico
 
 # Development server
 dev: build
@@ -28,3 +32,5 @@ clean:
 	rm -rf wasm/target
 	rm -rf wasm/pkg
 	rm -rf result
+
+
