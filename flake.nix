@@ -61,8 +61,8 @@
 
         # Default package (build everything)
         packages.default = pkgs.stdenv.mkDerivation {
-          pname = "typcraft";
-          version = "0.0.1";
+          pname = "typst-math-preview";
+          version = "0.1.0";
 
           src = ./.;
 

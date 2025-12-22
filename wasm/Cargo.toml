@@ -1,0 +1,22 @@
+[package]
+name = "typst-math-svg"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+typst = "0.13.0"
+typst-svg = "0.13.0"
+typst-syntax = "0.13.0"
+typst-library = "0.13.0"
+typst-assets = { version = "0.13.0", features = ["fonts"] }
+wasm-bindgen = "0.2"
+console_error_panic_hook = "0.1"
+comemo = "0.4"
+once_cell = "1.19"
+
+[profile.release]
+opt-level = "s"
+lto = true
