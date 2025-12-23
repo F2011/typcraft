@@ -21,9 +21,7 @@ dev: build
 
 # Deploy to gh-pages branch
 deploy: build
-	git add -f public
-	git commit -m "Build for deploy" --allow-empty
-	git subtree push --prefix public origin gh-pages
+	cd public && git init -b gh-pages && git add -Af && git commit -S -m "Build for deploy" && git push -f $(shell git remote get-url origin) gh-pages && rm -rf .git
 
 # Clean build artifacts
 clean:
