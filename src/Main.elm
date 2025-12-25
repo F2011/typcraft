@@ -94,8 +94,23 @@ update msg model =
                     ( model, Cmd.none )
 
 
+isCorrect : Model -> Bool
+isCorrect model =
+    not (String.isEmpty model.userSvg)
+        && not (String.isEmpty model.goalSvg)
+        && model.userSvg == model.goalSvg
+
+
 view : Model -> Html Msg
 view model =
+    let
+        userBorderColor =
+            if isCorrect model then
+                "green"
+
+            else
+                "#000"
+    in
     div
         [ style "font-family" "system-ui, sans-serif"
         , style "max-width" "800px"
@@ -122,7 +137,7 @@ view model =
             [ label [ style "display" "block", style "margin-bottom" "0.5rem" ]
                 [ text "Your typst output:" ]
             , div
-                [ style "border" "1px solid #000"
+                [ style "border" ("1px solid " ++ userBorderColor)
                 , style "padding" "1rem"
                 , style "min-height" "100px"
                 , style "background" "#ffffff"
@@ -154,10 +169,10 @@ view model =
 
 viewResult : Model -> Html Msg
 viewResult model =
-    if String.isEmpty model.userSvg || String.isEmpty model.goalSvg then
+    if String.isEmpty model.userSvg then
         text ""
 
-    else if model.userSvg == model.goalSvg then
+    else if isCorrect model then
         div
             [ style "margin-top" "1rem"
             , style "padding" "0.5rem"
