@@ -1,5 +1,6 @@
 module Main exposing (main)
 
+import Array
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
@@ -7,24 +8,43 @@ import Html.Events exposing (onInput)
 import Json.Decode as D
 import Json.Encode
 import Ports
+import Random
+
+
+type alias Equation =
+    { name : String
+    , typst : String
+    }
 
 
 type alias Model =
     { expression : String
     , userSvg : String
     , goalSvg : String
-    , goalExpression : String
+    , goalEquation : Equation
     }
 
 
 type Msg
     = ExpressionChanged String
     | SvgRendered D.Value
+    | EquationSelected Int
 
 
-goalExpression : String
-goalExpression =
-    "F_g = (G m_1 m_2) / (r^2)"
+equations : Array.Array Equation
+equations =
+    Array.fromList
+        [ { name = "Newton's Gravitation", typst = "F_g = (G m_1 m_2) / (r^2)" }
+        , { name = "Euler's Identity", typst = "e^(i pi) + 1 = 0" }
+        , { name = "Pythagorean Theorem", typst = "a^2 + b^2 = c^2" }
+        , { name = "Quadratic Formula", typst = "x = (-b plus.minus sqrt(b^2 - 4 a c)) / (2 a)" }
+        , { name = "Einstein's Mass-Energy", typst = "E = m c^2" }
+        , { name = "Schrödinger Equation", typst = "i hbar (diff Psi) / (diff t) = hat(H) Psi" }
+        , { name = "Maxwell's Equations (Gauss)", typst = "nabla dot bold(E) = rho / epsilon_0" }
+        , { name = "Euler's Formula", typst = "e^(i theta) = cos theta + i sin theta" }
+        , { name = "Binomial Theorem", typst = "(x + y)^n = sum_(k=0)^n binom(n, k) x^(n-k) y^k" }
+        , { name = "Fourier Transform", typst = "hat(f)(xi) = integral_(-oo)^oo f(x) e^(-2 pi i x xi) dif x" }
+        ]
 
 
 init : () -> ( Model, Cmd Msg )
@@ -32,9 +52,9 @@ init _ =
     ( { expression = ""
       , userSvg = ""
       , goalSvg = ""
-      , goalExpression = goalExpression
+      , goalEquation = { name = "", typst = "" }
       }
-    , Ports.renderMath { expression = goalExpression, target = "goal" }
+    , Random.generate EquationSelected (Random.int 0 (Array.length equations - 1))
     )
 
 
@@ -61,6 +81,16 @@ update msg model =
                     ( { model | goalSvg = svg }, Cmd.none )
 
                 _ ->
+                    ( model, Cmd.none )
+
+        EquationSelected index ->
+            case Array.get index equations of
+                Just equation ->
+                    ( { model | goalEquation = equation }
+                    , Ports.renderMath { expression = equation.typst, target = "goal" }
+                    )
+
+                Nothing ->
                     ( model, Cmd.none )
 
 
@@ -105,7 +135,7 @@ view model =
             ]
         , div [ style "margin-top" "1rem" ]
             [ label [ style "display" "block", style "margin-bottom" "0.5rem" ]
-                [ text "Goal:" ]
+                [ text ("Goal: " ++ model.goalEquation.name) ]
             , div
                 [ style "border" "1px solid #000"
                 , style "padding" "1rem"
