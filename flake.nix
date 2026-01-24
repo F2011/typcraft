@@ -1,5 +1,5 @@
 {
-  description = "Elm + Bun + Rust development environment";
+  description = "Typcraft - Practice Typsetting";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -17,6 +17,7 @@
 
         # Rust with wasm32 target
         rustToolchain = pkgs.rust-bin.stable.latest.default.override {
+          #extensions = [ "rust-src" "rust-analyzer" ];
           targets = [ "wasm32-unknown-unknown" ];
         };
 
@@ -52,7 +53,7 @@
           inherit buildInputs;
 
           shellHook = ''
-            echo "Elm + Bun + Rust development environment"
+            echo "Typcraft development environment"
             echo "Elm version: $(elm --version)"
             echo "Bun version: $(bun --version)"
             echo "Rust version: $(rustc --version)"
@@ -64,7 +65,7 @@
         };
 
         # Default package (build everything)
-        packages.default = pkgs.stdenv.mkDerivation {
+        /*packages.default = pkgs.stdenv.mkDerivation {
           pname = "typst-math-preview";
           version = "0.1.0";
 
@@ -88,7 +89,7 @@
             mkdir -p $out
             cp -r public/* $out/
           '';
-        };
+        };*/
       }
     );
 }

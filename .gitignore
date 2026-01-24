@@ -1,6 +1,7 @@
 # macOS Files
 **/.claude
 **/.DS_Store
+.direnv/
 
 # WASM build artifacts
 wasm/target/
