@@ -2,13 +2,14 @@ module Main exposing (main)
 
 import Array
 import Browser
+import Browser.Dom
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onInput)
+import Html.Events exposing (onClick, onInput)
 import Json.Decode as D
-import Json.Encode
 import Ports
 import Random
+import Task
 
 
 type alias Equation =
@@ -17,11 +18,17 @@ type alias Equation =
     }
 
 
+type Page
+    = Landing
+    | App
+
+
 type alias Model =
     { expression : String
     , userSvg : String
     , goalSvg : String
     , goalEquation : Equation
+    , page : Page
     }
 
 
@@ -29,21 +36,24 @@ type Msg
     = ExpressionChanged String
     | SvgRendered D.Value
     | EquationSelected Int
+    | NewEquation
+    | StartApp
+    | KeyDown String Bool Bool
+    | NoOp
 
 
 equations : Array.Array Equation
 equations =
     Array.fromList
-        [ { name = "Newton's Gravitation", typst = "F_g = (G m_1 m_2) / (r^2)" }
+        [ { name = "Newton's Gravitaty Equation", typst = "F_g = (G m_1 m_2) / (r^2)" }
         , { name = "Euler's Identity", typst = "e^(i pi) + 1 = 0" }
-        , { name = "Pythagorean Theorem", typst = "a^2 + b^2 = c^2" }
-        , { name = "Quadratic Formula", typst = "x = (-b plus.minus sqrt(b^2 - 4 a c)) / (2 a)" }
+        , { name = "The Pythagorean Theorem", typst = "a^2 + b^2 = c^2" }
+        , { name = "The Quadratic Formula", typst = "x = (-b plus.minus sqrt(b^2 - 4 a c)) / (2 a)" }
         , { name = "Einstein's Mass-Energy", typst = "E = m c^2" }
-        , { name = "Schrödinger Equation", typst = "i hbar (diff Psi) / (diff t) = hat(H) Psi" }
         , { name = "Maxwell's Equations (Gauss)", typst = "nabla dot bold(E) = rho / epsilon_0" }
         , { name = "Euler's Formula", typst = "e^(i theta) = cos theta + i sin theta" }
-        , { name = "Binomial Theorem", typst = "(x + y)^n = sum_(k=0)^n binom(n, k) x^(n-k) y^k" }
-        , { name = "Fourier Transform", typst = "hat(f)(xi) = integral_(-oo)^oo f(x) e^(-2 pi i x xi) dif x" }
+        , { name = "The Binomial Theorem", typst = "(x + y)^n = sum_(k=0)^n binom(n, k) x^(n-k) y^k" }
+        , { name = "The Fourier Transform", typst = "hat(f)(xi) = integral_(-oo)^oo f(x) e^(-2 pi i x xi) dif x" }
         ]
 
 
@@ -53,6 +63,7 @@ init _ =
       , userSvg = ""
       , goalSvg = ""
       , goalEquation = { name = "", typst = "" }
+      , page = Landing
       }
     , Random.generate EquationSelected (Random.int 0 (Array.length equations - 1))
     )
@@ -93,101 +104,224 @@ update msg model =
                 Nothing ->
                     ( model, Cmd.none )
 
+        NewEquation ->
+            ( { model | expression = "", userSvg = "" }
+            , Random.generate EquationSelected (Random.int 0 (Array.length equations - 1))
+            )
+
+        StartApp ->
+            ( { model | page = App }
+            , Task.attempt (\_ -> NoOp) (Browser.Dom.focus "typst-input")
+            )
+
+        KeyDown key ctrl meta ->
+            if (ctrl || meta) && key == "Enter" then
+                update NewEquation model
+
+            else
+                ( model, Cmd.none )
+
+        NoOp ->
+            ( model, Cmd.none )
+
 
 isCorrect : Model -> Bool
 isCorrect model =
     not (String.isEmpty model.userSvg)
         && not (String.isEmpty model.goalSvg)
-        && model.userSvg == model.goalSvg
+        && model.userSvg
+        == model.goalSvg
+
+
+onKeyDown : Html.Attribute Msg
+onKeyDown =
+    Html.Events.on "keydown"
+        (D.map3 KeyDown
+            (D.field "key" D.string)
+            (D.field "ctrlKey" D.bool)
+            (D.field "metaKey" D.bool)
+        )
 
 
 view : Model -> Html Msg
 view model =
+    div []
+        [ viewGithubLink
+        , viewLanding model
+        , viewApp model
+        ]
+
+
+viewLanding : Model -> Html Msg
+viewLanding model =
+    let
+        overlayClass =
+            if model.page == Landing then
+                "landing-overlay"
+
+            else
+                "landing-overlay hidden"
+    in
+    div [ class overlayClass ]
+        [ h1
+            [ style "font-size" "3rem"
+            , style "font-weight" "500"
+            , style "margin" "0 0 0.5rem 0"
+            , style "color" "var(--text-primary)"
+            ]
+            [ text "typcraft" ]
+        , p
+            [ style "font-size" "1.1rem"
+            , style "color" "var(--text-secondary)"
+            , style "margin" "0 0 2rem 0"
+            ]
+            [ text "Use typst right in your browser!" ]
+        , button
+            [ class "btn-primary"
+            , onClick StartApp
+            , style "padding" "0.75rem 2rem"
+            , style "font-size" "1rem"
+            ]
+            [ text "Start" ]
+        ]
+
+
+viewGithubLink : Html Msg
+viewGithubLink =
+    a
+        [ href "https://github.com/arjdroid/typcraft"
+        , target "_blank"
+        , class "github-link"
+        , style "position" "fixed"
+        , style "top" "1rem"
+        , style "right" "1rem"
+        , style "z-index" "200"
+        ]
+        [ node "svg"
+            [ Html.Attributes.attribute "viewBox" "0 0 16 16"
+            , Html.Attributes.attribute "width" "24"
+            , Html.Attributes.attribute "height" "24"
+            , Html.Attributes.attribute "fill" "currentColor"
+            ]
+            [ node "path"
+                [ Html.Attributes.attribute "d" "M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                ]
+                []
+            ]
+        ]
+
+
+viewSvgBox : String -> String -> Html Msg
+viewSvgBox boxId borderColor =
+    div
+        [ id boxId
+        , class "svg-output-box"
+        , style "height" "120px"
+        , style "background" "var(--bg-surface)"
+        , style "border-radius" "8px"
+        , style "border" ("1px solid " ++ borderColor)
+        , style "display" "flex"
+        , style "align-items" "center"
+        , style "justify-content" "center"
+        , style "padding" "1rem"
+        ]
+        []
+
+
+viewFeedback : Model -> Html Msg
+viewFeedback model =
+    div
+        [ style "height" "3rem"
+        , style "display" "flex"
+        , style "align-items" "center"
+        ]
+        [ if String.isEmpty model.userSvg then
+            text ""
+
+          else if isCorrect model then
+            span
+                [ style "color" "var(--border-correct)"
+                , style "font-weight" "500"
+                ]
+                [ text "Correct!" ]
+
+          else
+            span
+                [ style "color" "var(--text-muted)"
+                ]
+                [ text "Not quite..." ]
+        ]
+
+
+viewLabel : String -> Html Msg
+viewLabel labelText =
+    label
+        [ style "display" "block"
+        , style "margin-bottom" "0.5rem"
+        , style "font-size" "1rem"
+        , style "text-transform" "capitalize"
+        , style "letter-spacing" "0.05em"
+        , style "color" "var(--text-muted)"
+        ]
+        [ text labelText ]
+
+
+viewApp : Model -> Html Msg
+viewApp model =
     let
         userBorderColor =
             if isCorrect model then
-                "green"
+                "var(--border-correct)"
 
             else
-                "#000"
+                "var(--border-color)"
     in
     div
-        [ style "font-family" "system-ui, sans-serif"
-        , style "max-width" "800px"
-        , style "margin" "2rem auto"
-        , style "padding" "1rem"
+        [ style "max-width" "700px"
+        , style "margin" "3rem auto"
+        , style "padding" "0 1.5rem"
         ]
-        [ h1 [ style "margin-bottom" "1rem" ] [ text "typcraft" ]
-        , div [ style "margin-top" "1rem" ]
-            [ label [ style "display" "block", style "margin-bottom" "0.5rem" ]
-                [ text ("Typesetting Goal: " ++ model.goalEquation.name) ]
-            , div
-                [ style "border" "1px solid #000"
-                , style "padding" "1rem"
-                , style "min-height" "100px"
-                , style "background" "#ffffff"
-                , style "display" "flex"
-                , style "align-items" "center"
-                , style "justify-content" "center"
-                , id "svg-output-goal"
-                ]
-                []
+        [ div [ style "margin-bottom" "1.5rem" ]
+            [ viewLabel ("Goal: typeset " ++ model.goalEquation.name)
+            , viewSvgBox "svg-output-goal" "var(--border-color)"
             ]
-        , div [ style "margin-top" "1rem" ]
-            [ label [ style "display" "block", style "margin-bottom" "0.5rem" ]
-                [ text "Your typst output:" ]
-            , div
-                [ style "border" ("1px solid " ++ userBorderColor)
-                , style "padding" "1rem"
-                , style "min-height" "100px"
-                , style "background" "#ffffff"
-                , style "display" "flex"
-                , style "align-items" "center"
-                , style "justify-content" "center"
-                , id "svg-output-user"
-                ]
-                []
+        , div [ style "margin-bottom" "1.5rem" ]
+            [ viewLabel "Your output"
+            , viewSvgBox "svg-output-user" userBorderColor
             ]
-        , div [ style "margin-top" "1rem" ]
-            [ label [ style "display" "block", style "margin-bottom" "0.5rem" ]
-                [ text "Your typst code:" ]
+        , div [ style "margin-bottom" "1rem" ]
+            [ viewLabel "Your typst code"
             , input
                 [ type_ "text"
+                , id "typst-input"
                 , value model.expression
                 , onInput ExpressionChanged
+                , onKeyDown
+                , Html.Attributes.autofocus True
                 , style "width" "100%"
-                , style "padding" "0.5rem"
-                , style "font-size" "1rem"
-                , style "font-family" "monospace"
-                , style "box-sizing" "border-box"
+                , style "padding" "0.75rem 1rem"
+                , style "font-size" "0.95rem"
+                , style "font-family" "var(--font-code)"
+                , style "border-radius" "6px"
+                , style "color" "var(--text-primary)"
                 ]
                 []
             ]
-        , viewResult model
+        , viewFeedback model
+        , button
+            [ class "btn-primary"
+            , onClick NewEquation
+            , style "padding" "0.6rem 1.25rem"
+            , style "font-size" "0.9rem"
+            ]
+            [ text "New Equation "
+            , span
+                [ style "opacity" "0.6"
+                , style "font-size" "0.8rem"
+                ]
+                [ text "(cmd+return)" ]
+            ]
         ]
-
-
-viewResult : Model -> Html Msg
-viewResult model =
-    if String.isEmpty model.userSvg then
-        text ""
-
-    else if isCorrect model then
-        div
-            [ style "margin-top" "1rem"
-            , style "padding" "0.5rem"
-            , style "color" "green"
-            , style "font-weight" "bold"
-            ]
-            [ text "Correct!" ]
-
-    else
-        div
-            [ style "margin-top" "1rem"
-            , style "padding" "0.5rem"
-            , style "color" "gray"
-            ]
-            [ text "Not quite..." ]
 
 
 subscriptions : Model -> Sub Msg
