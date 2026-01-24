@@ -9,9 +9,9 @@
     :root {
       --bg-primary: #ffffff;
       --bg-surface: #ffffff;
-      --bg-input: #ffffff;
-      --bg-input-focus: #ffffff;
-      --bg-overlay: rgba(255, 255, 255, 0.97);
+      --bg-input: #f7f7f7;
+      --bg-input-focus: #f7f7f7;
+      --bg-overlay: rgba(255, 255, 255, 1.00);
       --text-primary: #000000;
       --text-secondary: #000000;
       --text-muted: #000000;
@@ -72,6 +72,12 @@
     // Listen for render requests from Elm
     app.ports.renderMathInternal.subscribe(({ expression, target }) => {
       const outputId = target === 'goal' ? 'svg-output-goal' : 'svg-output-user';
+      if (!expression) {
+        const output = document.getElementById(outputId);
+        if (output) { output.innerHTML = ''; }
+        app.ports.mathRendered.send({ target, svg: '' });
+        return;
+      }
       try {
         const svg = renderMath(expression);
         // Update the DOM directly
