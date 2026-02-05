@@ -215,6 +215,33 @@ viewFooter =
             , style "opacity" "0.15"
             ]
             [ text "typcraft" ]
+        , span
+            [ style "font-size" "1.1rem"
+            , style "font-weight" "300"
+            , style "color" "var(--text-primary)"
+            , style "opacity" "0.35"
+            ]
+            [ text "Stuck? Try these resources:" ]
+        , a
+            [ href "https://typst.app/docs/reference/"
+            , target "_blank"
+            , class "github-link"
+            , style "pointer-events" "auto"
+            , style "color" "var(--text-muted)"
+            , style "text-decoration" "none"
+            , style "font-size" "0.85rem"
+            ]
+            [ text "typst official reference manual" ]
+        , a
+            [ href "https://detypify.quarticcat.com/"
+            , target "_blank"
+            , class "github-link"
+            , style "pointer-events" "auto"
+            , style "color" "var(--text-muted)"
+            , style "text-decoration" "none"
+            , style "font-size" "0.85rem"
+            ]
+            [ text "typst symbol fuzzy search" ]
         , a
             [ href "https://github.com/arjdroid/typcraft"
             , target "_blank"

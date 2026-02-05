@@ -3,7 +3,10 @@ port module Ports exposing (mathRendered, renderMath)
 import Json.Encode as E
 
 
+
 -- Send math expression to JS for rendering with target identifier
+
+
 port renderMathInternal : E.Value -> Cmd msg
 
 
@@ -17,5 +20,8 @@ renderMath { expression, target } =
         )
 
 
+
 -- Receive SVG result from JS with target identifier (JSON: { target, svg })
+
+
 port mathRendered : (E.Value -> msg) -> Sub msg
